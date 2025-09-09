@@ -20,7 +20,7 @@ pub enum ServerEvent {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum MobileEvent {
-    Press { button: u32 },
+    Press { button: u8 },
 }
 
 #[derive(Clone)]
@@ -29,18 +29,67 @@ struct AppState {
     server_tx: broadcast::Sender<ServerEvent>,
 }
 
+#[cfg_attr(any(target_os = "windows", target_os = "macos"), async_trait::async_trait)]
+pub trait InputDevice: Send + Sync {
+    async fn press_button(&self, button: u8);
+    async fn release_button(&self, button: u8);
+}
+
+#[cfg(target_os = "windows")]
+pub struct VJoyDevice {
+    // TODO: actual vJoy device handle
+}
+
+#[cfg(target_os = "windows")]
+#[async_trait::async_trait]
+impl InputDevice for VJoyDevice {
+    async fn press_button(&self, button: u8) {
+        // TODO: call vJoy API here
+    }
+
+    async fn release_button(&self, button: u8) {
+        // TODO: call vJoy API here
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+pub struct MockDevice;
+
+#[cfg(not(target_os = "windows"))]
+#[async_trait::async_trait]
+impl InputDevice for MockDevice {
+    async fn press_button(&self, button: u8) {
+        println!("[MOCK] press_button({})", button);
+    }
+
+    async fn release_button(&self, button: u8) {
+        println!("[MOCK] release_button({})", button);
+    }
+}
+
 pub async fn run() {
     // Channels
-    let (mobile_tx, mobile_rx) = tokio::sync::mpsc::channel::<MobileEvent>(32);
-    let (server_tx, _) = tokio::sync::broadcast::channel::<ServerEvent>(32);
+    let (mobile_tx, mobile_rx) = mpsc::channel::<MobileEvent>(32);
+    let (server_tx, _) = broadcast::channel::<ServerEvent>(32);
 
     let state = AppState {
         mobile_tx,
         server_tx: server_tx.clone(),
     };
 
+    let device: Arc<Mutex<dyn InputDevice>> = {
+        #[cfg(target_os = "windows")]
+        {
+            Arc::new(Mutex::new(VJoyDevice { /* TODO: init */ }))
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            Arc::new(Mutex::new(MockDevice))
+        }
+    };
+
     // Spawn vJoy worker
-    tokio::spawn(vjoy_worker(mobile_rx, server_tx.clone()));
+    tokio::spawn(vjoy_worker(device, mobile_rx, server_tx.clone()));
 
     // Spawn Axum server for mobile clients
     tokio::spawn(async move {
@@ -130,11 +179,15 @@ async fn handle_socket(
 }
 
 
-async fn vjoy_worker(mut mobile_rx: mpsc::Receiver<MobileEvent>, server_tx: broadcast::Sender<ServerEvent>) {
+async fn vjoy_worker(device: Arc<Mutex<dyn InputDevice>>, mut mobile_rx: mpsc::Receiver<MobileEvent>, server_tx: broadcast::Sender<ServerEvent>) {
     println!("vJoy worker running...");
     while let Some(evt) = mobile_rx.recv().await {
         println!("Received mobile event: {:?}", evt);
-        // TODO: map evt -> vJoy actions
+        match evt {
+            MobileEvent::Press { button } => {
+                device.lock().await.press_button(button).await;
+            }
+        }
     }
 
     let _ = server_tx.send(ServerEvent::LayoutPushed { id: "example".into() });
