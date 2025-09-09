@@ -2,6 +2,8 @@
 mod windows;
 #[cfg(target_os = "windows")]
 pub use windows::VJoyDevice;
+#[cfg(target_os = "windows")]
+use vjoy::VJoy;
 
 #[cfg(not(target_os = "windows"))]
 mod mock;

@@ -1,8 +1,9 @@
+use vjoy::{ButtonState, VJoy};
 use crate::vjoystick::InputDevice;
 
 pub struct VJoyDevice {
-    vjoy: VJoy,
-    device_id: u32,
+    pub vjoy: VJoy,
+    pub device_id: u32,
 }
 
 #[async_trait::async_trait]
