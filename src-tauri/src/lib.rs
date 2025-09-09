@@ -10,6 +10,13 @@ use axum::extract::ws::Message;
 use axum::http::{HeaderValue, Response, StatusCode};
 use include_dir::{include_dir, Dir};
 use tokio::net::TcpListener;
+use local_ip_address::local_ip;
+use vjoy::{ButtonState, VJoy};
+
+#[tauri::command]
+async fn get_mobile_client_server_address() -> String {
+    local_ip().unwrap().to_string()
+}
 
 static MOBILE_ASSETS: Dir = include_dir!("$CARGO_MANIFEST_DIR/../mobile-client/dist");
 
@@ -20,7 +27,7 @@ pub enum ServerEvent {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum MobileEvent {
-    Press { button: u8 },
+    Press { button: u8, duration: u64 },
 }
 
 #[derive(Clone)]
@@ -31,24 +38,27 @@ struct AppState {
 
 #[cfg_attr(any(target_os = "windows", target_os = "macos"), async_trait::async_trait)]
 pub trait InputDevice: Send + Sync {
-    async fn press_button(&self, button: u8);
-    async fn release_button(&self, button: u8);
+    async fn press_button(&mut self, button: u8, duration_millis: u64);
 }
 
 #[cfg(target_os = "windows")]
 pub struct VJoyDevice {
-    // TODO: actual vJoy device handle
+    vjoy: VJoy,
+    device_id: u32,
 }
 
 #[cfg(target_os = "windows")]
 #[async_trait::async_trait]
 impl InputDevice for VJoyDevice {
-    async fn press_button(&self, button: u8) {
-        // TODO: call vJoy API here
-    }
+    async fn press_button(&mut self, button: u8, duration_millis: u64) {
+        let mut device = self.vjoy.get_device_state(self.device_id).unwrap();
+        device.set_button(button, ButtonState::Pressed).unwrap();
+        self.vjoy.update_device_state(&device).unwrap();
 
-    async fn release_button(&self, button: u8) {
-        // TODO: call vJoy API here
+        tokio::time::sleep(std::time::Duration::from_millis(duration_millis)).await;
+
+        device.set_button(button, ButtonState::Released).unwrap();
+        self.vjoy.update_device_state(&device).unwrap();
     }
 }
 
@@ -58,12 +68,8 @@ pub struct MockDevice;
 #[cfg(not(target_os = "windows"))]
 #[async_trait::async_trait]
 impl InputDevice for MockDevice {
-    async fn press_button(&self, button: u8) {
+    async fn press_button(&mut self, button: u8, duration_millis: u64) {
         println!("[MOCK] press_button({})", button);
-    }
-
-    async fn release_button(&self, button: u8) {
-        println!("[MOCK] release_button({})", button);
     }
 }
 
@@ -80,7 +86,7 @@ pub async fn run() {
     let device: Arc<Mutex<dyn InputDevice>> = {
         #[cfg(target_os = "windows")]
         {
-            Arc::new(Mutex::new(VJoyDevice { /* TODO: init */ }))
+            Arc::new(Mutex::new(VJoyDevice { vjoy: VJoy::from_default_dll_location().unwrap(), device_id: 2 }))
         }
         #[cfg(not(target_os = "windows"))]
         {
@@ -106,6 +112,7 @@ pub async fn run() {
     // Run Tauri main loop (desktop UI)
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .invoke_handler(tauri::generate_handler![get_mobile_client_server_address])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -115,6 +122,7 @@ async fn static_handler(
     req: axum::http::Request<axum::body::Body>,
 ) -> impl IntoResponse {
     let path = req.uri().path().trim_start_matches('/'); // remove leading slash
+    // println!("Got request at /{}", path);
 
     // fallback to index.html if file is missing
     let file = MOBILE_ASSETS.get_file(path).or_else(|| MOBILE_ASSETS.get_file("index.html"));
@@ -143,6 +151,8 @@ async fn handle_socket(
     socket: WebSocket,
     state: AppState,
 ) {
+    println!("Got new websocket connection");
+
     // Split socket into sink (tx) and stream (rx)
     let (tx, mut rx) = socket.split();
 
@@ -184,8 +194,8 @@ async fn vjoy_worker(device: Arc<Mutex<dyn InputDevice>>, mut mobile_rx: mpsc::R
     while let Some(evt) = mobile_rx.recv().await {
         println!("Received mobile event: {:?}", evt);
         match evt {
-            MobileEvent::Press { button } => {
-                device.lock().await.press_button(button).await;
+            MobileEvent::Press { button, duration } => {
+                device.lock().await.press_button(button, duration).await;
             }
         }
     }

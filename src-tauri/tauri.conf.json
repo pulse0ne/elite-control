@@ -13,6 +13,7 @@
     "windows": [
       {
         "title": "elite-control",
+        "theme": "Dark",
         "width": 800,
         "height": 600
       }

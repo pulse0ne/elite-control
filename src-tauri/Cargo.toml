@@ -28,4 +28,7 @@ futures-util = { version = "0.3.31", features = ["sink"] }
 axum = { version = "0.8.4", features = ["ws"] }
 mime_guess = "2.0.5"
 async-trait = "0.1.89"
-vjoy = { version = "0.6.0", optional = true }
+local-ip-address = "0.6.5"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+vjoy = "0.6.0"
