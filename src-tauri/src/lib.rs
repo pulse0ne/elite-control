@@ -1,107 +1,29 @@
-use axum::{
-    extract::{ws::{WebSocketUpgrade, WebSocket}, State},
-    response::IntoResponse,
-};
-use tokio::sync::{broadcast, mpsc, Mutex};
-use futures_util::{StreamExt, SinkExt};
-use serde::{Serialize, Deserialize};
-use std::sync::Arc;
-use axum::extract::ws::Message;
-use axum::http::{HeaderValue, Response, StatusCode};
-use include_dir::{include_dir, Dir};
+mod state;
+mod ws;
+mod mobile_assets;
+mod vjoystick;
+
 use tokio::net::TcpListener;
 use local_ip_address::local_ip;
-use vjoy::{ButtonState, VJoy};
+use crate::state::AppState;
+use crate::vjoystick::vjoy_worker;
 
 #[tauri::command]
 async fn get_mobile_client_server_address() -> String {
     local_ip().unwrap().to_string()
 }
 
-static MOBILE_ASSETS: Dir = include_dir!("$CARGO_MANIFEST_DIR/../mobile-client/dist");
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum ServerEvent {
-    LayoutPushed { id: String },
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub enum MobileEvent {
-    Press { button: u8, duration: u64 },
-}
-
-#[derive(Clone)]
-struct AppState {
-    mobile_tx: mpsc::Sender<MobileEvent>,
-    server_tx: broadcast::Sender<ServerEvent>,
-}
-
-#[cfg_attr(any(target_os = "windows", target_os = "macos"), async_trait::async_trait)]
-pub trait InputDevice: Send + Sync {
-    async fn press_button(&mut self, button: u8, duration_millis: u64);
-}
-
-#[cfg(target_os = "windows")]
-pub struct VJoyDevice {
-    vjoy: VJoy,
-    device_id: u32,
-}
-
-#[cfg(target_os = "windows")]
-#[async_trait::async_trait]
-impl InputDevice for VJoyDevice {
-    async fn press_button(&mut self, button: u8, duration_millis: u64) {
-        let mut device = self.vjoy.get_device_state(self.device_id).unwrap();
-        device.set_button(button, ButtonState::Pressed).unwrap();
-        self.vjoy.update_device_state(&device).unwrap();
-
-        tokio::time::sleep(std::time::Duration::from_millis(duration_millis)).await;
-
-        device.set_button(button, ButtonState::Released).unwrap();
-        self.vjoy.update_device_state(&device).unwrap();
-    }
-}
-
-#[cfg(not(target_os = "windows"))]
-pub struct MockDevice;
-
-#[cfg(not(target_os = "windows"))]
-#[async_trait::async_trait]
-impl InputDevice for MockDevice {
-    async fn press_button(&mut self, button: u8, duration_millis: u64) {
-        println!("[MOCK] press_button({})", button);
-    }
-}
-
 pub async fn run() {
-    // Channels
-    let (mobile_tx, mobile_rx) = mpsc::channel::<MobileEvent>(32);
-    let (server_tx, _) = broadcast::channel::<ServerEvent>(32);
 
-    let state = AppState {
-        mobile_tx,
-        server_tx: server_tx.clone(),
-    };
+    let (state, mobile_rx) = AppState::new();
 
-    let device: Arc<Mutex<dyn InputDevice>> = {
-        #[cfg(target_os = "windows")]
-        {
-            Arc::new(Mutex::new(VJoyDevice { vjoy: VJoy::from_default_dll_location().unwrap(), device_id: 2 }))
-        }
-        #[cfg(not(target_os = "windows"))]
-        {
-            Arc::new(Mutex::new(MockDevice))
-        }
-    };
-
-    // Spawn vJoy worker
-    tokio::spawn(vjoy_worker(device, mobile_rx, server_tx.clone()));
+    tokio::spawn(vjoy_worker(mobile_rx, state.server_tx.clone()));
 
     // Spawn Axum server for mobile clients
     tokio::spawn(async move {
         let app = axum::Router::new()
-            .route("/ws", axum::routing::get(ws_handler))
-            .fallback(axum::routing::get(static_handler))
+            .route("/ws", axum::routing::get(ws::ws_handler))
+            .fallback(axum::routing::get(mobile_assets::static_handler))
             .with_state(state);
 
         println!("Serving mobile client on http://0.0.0.0:8787/");
@@ -115,90 +37,4 @@ pub async fn run() {
         .invoke_handler(tauri::generate_handler![get_mobile_client_server_address])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-}
-
-async fn static_handler(
-    State(_state): State<AppState>, // we keep the same state type for sharing channels if needed
-    req: axum::http::Request<axum::body::Body>,
-) -> impl IntoResponse {
-    let path = req.uri().path().trim_start_matches('/'); // remove leading slash
-    // println!("Got request at /{}", path);
-
-    // fallback to index.html if file is missing
-    let file = MOBILE_ASSETS.get_file(path).or_else(|| MOBILE_ASSETS.get_file("index.html"));
-
-    if let Some(file) = file {
-        let mime = mime_guess::from_path(file.path()).first_or_octet_stream();
-        let mut res = Response::new(file.contents().into());
-        res.headers_mut().insert(
-            "content-type",
-            HeaderValue::from_str(mime.as_ref()).unwrap(),
-        );
-        res
-    } else {
-        (StatusCode::NOT_FOUND, "Not Found").into_response()
-    }
-}
-
-async fn ws_handler(
-    ws: WebSocketUpgrade,
-    State(state): State<AppState>,
-) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| handle_socket(socket, state))
-}
-
-async fn handle_socket(
-    socket: WebSocket,
-    state: AppState,
-) {
-    println!("Got new websocket connection");
-
-    // Split socket into sink (tx) and stream (rx)
-    let (tx, mut rx) = socket.split();
-
-    // Wrap tx in Arc<Mutex<>> so it can be shared with tasks
-    let tx = Arc::new(Mutex::new(tx));
-
-    // --- Task: Send server events to this client ---
-    let mut sub = state.server_tx.subscribe();
-    let tx_clone = Arc::clone(&tx);
-    tokio::spawn(async move {
-        while let Ok(evt) = sub.recv().await {
-            let txt = match serde_json::to_string(&evt) {
-                Ok(s) => s,
-                Err(_) => continue, // skip bad serialization
-            };
-            let mut locked = tx_clone.lock().await;
-            if locked.send(Message::Text(axum::extract::ws::Utf8Bytes::from(txt))).await.is_err() {
-                // Client disconnected
-                break;
-            }
-        }
-    });
-
-    // --- Task: Receive events from client ---
-    while let Some(Ok(msg)) = rx.next().await {
-        if let Message::Text(txt) = msg {
-            if let Ok(evt) = serde_json::from_str::<MobileEvent>(&txt) {
-                let _ = state.mobile_tx.send(evt).await; // ignore if receiver dropped
-            }
-        }
-    }
-
-    println!("WebSocket client disconnected");
-}
-
-
-async fn vjoy_worker(device: Arc<Mutex<dyn InputDevice>>, mut mobile_rx: mpsc::Receiver<MobileEvent>, server_tx: broadcast::Sender<ServerEvent>) {
-    println!("vJoy worker running...");
-    while let Some(evt) = mobile_rx.recv().await {
-        println!("Received mobile event: {:?}", evt);
-        match evt {
-            MobileEvent::Press { button, duration } => {
-                device.lock().await.press_button(button, duration).await;
-            }
-        }
-    }
-
-    let _ = server_tx.send(ServerEvent::LayoutPushed { id: "example".into() });
 }
