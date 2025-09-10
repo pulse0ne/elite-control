@@ -3,8 +3,15 @@ use axum::extract::{State, WebSocketUpgrade};
 use axum::extract::ws::{Message, WebSocket};
 use axum::response::IntoResponse;
 use futures_util::{SinkExt, StreamExt};
+use serde::Serialize;
+use tauri::Emitter;
 use tokio::sync::Mutex;
 use crate::state::{AppState, MobileEvent};
+
+#[derive(Serialize, Clone)]
+struct ClientCountEvent {
+    count: usize,
+}
 
 pub async fn ws_handler(
     ws: WebSocketUpgrade,
@@ -18,6 +25,12 @@ async fn handle_socket(
     state: AppState,
 ) {
     println!("Got new websocket connection");
+    {
+        // increment count
+        let mut count = state.client_count.lock().await;
+        *count += 1;
+        let _ = state.app_handle.emit("client-count", ClientCountEvent { count: *count });
+    }
 
     // Split socket into sink (tx) and stream (rx)
     let (tx, mut rx) = socket.split();
@@ -52,4 +65,10 @@ async fn handle_socket(
     }
 
     println!("WebSocket client disconnected");
+
+    {
+        let mut count = state.client_count.lock().await;
+        *count -= 1;
+        let _ = state.app_handle.emit("client-count", ClientCountEvent { count: *count });
+    }
 }

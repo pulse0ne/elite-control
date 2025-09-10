@@ -6,9 +6,7 @@ export function useWebsocket(url: string) {
   const [lastMessage, setLastMessage] = useState<any>(null);
 
   const connect = useCallback(() => {
-    if (socketRef.current) {
-      // TODO: something's wrong here
-      console.log('existing ref');
+    if (socketRef.current && socketRef.current.readyState !== WebSocket.CLOSED) {
       return;
     }
 
@@ -35,11 +33,10 @@ export function useWebsocket(url: string) {
         connect();
       }
     };
-    // document.addEventListener("visibilitychange", handleVisibility);
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
-      socketRef.current?.close();
+      // socketRef.current?.close();
     };
   }, [connect, isConnected]);
 

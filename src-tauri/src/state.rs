@@ -1,12 +1,15 @@
+use std::sync::Arc;
 use serde::{Deserialize, Serialize};
-use tokio::sync::{broadcast, mpsc};
+use tokio::sync::{broadcast, mpsc, Mutex};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub enum ServerEvent {
     LayoutPushed { id: String },
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub enum MobileEvent {
     Press { button: u8, duration: u64 },
 }
@@ -15,15 +18,6 @@ pub enum MobileEvent {
 pub struct AppState {
     pub mobile_tx: mpsc::Sender<MobileEvent>,
     pub server_tx: broadcast::Sender<ServerEvent>,
-}
-
-impl AppState {
-    pub fn new() -> (Self, mpsc::Receiver<MobileEvent>) {
-        let (mobile_tx, mobile_rx) = mpsc::channel(32);
-        let (server_tx, _) = broadcast::channel(32);
-        (
-            Self { mobile_tx, server_tx },
-            mobile_rx,
-        )
-    }
+    pub app_handle: tauri::AppHandle,
+    pub client_count: Arc<Mutex<usize>>,
 }

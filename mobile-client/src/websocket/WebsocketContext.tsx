@@ -10,8 +10,6 @@ const url = `ws://${window.location.hostname}:${window.location.port}/ws`;
 export const WebsocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const ws = useWebsocket(url);
 
-  console.log('WebsocketProvider');
-
   return (
     <WebsocketContext.Provider value={ws}>
       {children}
