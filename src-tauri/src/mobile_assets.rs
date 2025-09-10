@@ -46,8 +46,6 @@ pub async fn static_handler(
         std::path::Path::new(&disk_path).join("index.html")
     };
 
-    println!("{:?}", file_path);
-
     match tokio::fs::read(&file_path).await {
         Ok(bytes) => {
             let mime = mime_guess::from_path(&file_path).first_or_octet_stream();
@@ -56,8 +54,7 @@ pub async fn static_handler(
                 .insert("content-type", HeaderValue::from_str(mime.as_ref()).unwrap());
             res
         }
-        Err(e) => {
-            println!("{}", e);
+        Err(_) => {
             (StatusCode::NOT_FOUND, "Not Found").into_response()
         },
     }

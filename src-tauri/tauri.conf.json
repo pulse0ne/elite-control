@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "identifier": "com.snedi.elite-control",
   "build": {
-    "beforeDevCommand": "yarn dev & yarn dev-client",
+    "beforeDevCommand": "yarn dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "yarn build && yarn build-client",
+    "beforeBuildCommand": "yarn build",
     "frontendDist": "../dist"
   },
   "app": {
