@@ -4,15 +4,15 @@
   "version": "0.1.0",
   "identifier": "com.snedi.elite-control",
   "build": {
-    "beforeDevCommand": "yarn dev",
+    "beforeDevCommand": "yarn dev & yarn dev-client",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "yarn build",
+    "beforeBuildCommand": "yarn build && yarn build-client",
     "frontendDist": "../dist"
   },
   "app": {
     "windows": [
       {
-        "title": "elite-control",
+        "title": "Elite Control",
         "theme": "Dark",
         "width": 800,
         "height": 600

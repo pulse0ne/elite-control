@@ -16,15 +16,20 @@ document.addEventListener("visibilitychange", function () {
   }
 });
 
+const testList: number[] = [];
+for (let i = 1; i < 11; i++) {
+  testList.push(i);
+}
+
 function App() {
 
-  function testSend() {
-    ws.send(JSON.stringify({ Press: { button: 1, duration: 100 }}));
+  function testSend(i: number) {
+    ws.send(JSON.stringify({ Press: { button: i, duration: 100 }}));
   }
 
   return (
     <>
-      <button onClick={testSend}>Send message</button>
+      {testList.map(i => <button key={i} onClick={() => testSend(i)}>Send message {i}</button>)}
     </>
   );
 }
