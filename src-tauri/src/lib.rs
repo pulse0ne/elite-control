@@ -16,24 +16,6 @@ async fn get_mobile_client_server_address() -> String {
 }
 
 pub async fn run() {
-
-    // let (state, mobile_rx) = AppState::new();
-
-    // tokio::spawn(vjoy_worker(mobile_rx, state.server_tx.clone()));
-    //
-    // // Spawn Axum server for mobile clients
-    // tokio::spawn(async move {
-    //     let app = axum::Router::new()
-    //         .route("/ws", axum::routing::get(ws::ws_handler))
-    //         .fallback(axum::routing::get(mobile_assets::static_handler))
-    //         .with_state(state);
-    //
-    //     println!("Serving mobile client on http://0.0.0.0:8787/");
-    //     let listener = TcpListener::bind("0.0.0.0:8787").await.unwrap();
-    //     axum::serve(listener, app).await.unwrap();
-    // });
-
-    // Run Tauri main loop (desktop UI)
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![get_mobile_client_server_address])
@@ -50,10 +32,8 @@ pub async fn run() {
                 client_count: Arc::new(Mutex::new(0))
             };
 
-            // Spawn vJoy worker
             tokio::spawn(vjoy_worker(mobile_rx, server_tx.clone()));
 
-            // Spawn Axum server for mobile clients
             tokio::spawn(async move {
                 let app = axum::Router::new()
                     .route("/ws", axum::routing::get(ws::ws_handler))
