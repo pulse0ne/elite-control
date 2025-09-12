@@ -29,6 +29,7 @@ axum = { version = "0.8.4", features = ["ws"] }
 mime_guess = "2.0.5"
 async-trait = "0.1.89"
 local-ip-address = "0.6.5"
+font-kit = "0.14.3"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 vjoy = "0.6.0"

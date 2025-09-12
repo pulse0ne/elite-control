@@ -4,6 +4,7 @@ mod mobile_assets;
 mod vjoystick;
 
 use std::sync::Arc;
+use font_kit::source::SystemSource;
 use tokio::net::TcpListener;
 use local_ip_address::local_ip;
 use tokio::sync::Mutex;
@@ -15,10 +16,16 @@ async fn get_mobile_client_server_address() -> String {
     local_ip().unwrap().to_string()
 }
 
+#[tauri::command]
+async fn list_system_fonts() -> Vec<String> {
+    let source = SystemSource::new();
+    source.all_families().unwrap()
+}
+
 pub async fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![get_mobile_client_server_address])
+        .invoke_handler(tauri::generate_handler![get_mobile_client_server_address, list_system_fonts])
         .setup(move |app| {
             let (mobile_tx, mobile_rx) = tokio::sync::mpsc::channel::<MobileEvent>(32);
             let (server_tx, _) = tokio::sync::broadcast::channel::<ServerEvent>(32);

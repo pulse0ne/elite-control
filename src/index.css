@@ -42,6 +42,11 @@ main {
     flex-grow: 1;
 }
 
+.stage-container {
+    height: 100%;
+    width: 100%;
+}
+
 .status-bar {
     background-color: rgb(32, 32, 32);
     height: 24px;

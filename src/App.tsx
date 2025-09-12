@@ -1,67 +1,80 @@
 import StatusBar from "./StatusBar.tsx";
-import {Group, Layer, Rect, Stage, Text} from "react-konva";
-import {useRef} from "react";
+import {Layer, Stage} from "react-konva";
+import {useEffect, useRef, useState} from "react";
+import Button, {ButtonAttributes} from "./widgets/Button.tsx";
+import {Vector2d} from "konva/lib/types";
+import {buttonSerializer} from "./widgets/serialization/buttonSerializer.ts";
+import {invoke} from "@tauri-apps/api/core";
 
-type ButtonAttributes = {
-  icon: string | null;
-  text: string | null;
-  font: string | null;
-  fontSize: number;
-  fontColor: string;
-  fill: string | null;
-  stroke: string | null;
-  cornerRadius: number;
-};
-
-type Size = {
-  width: number;
-  height: number;
-};
-
-type Position = {
-  x: number;
-  y: number;
-};
-
-type Button = Size & Position & {
-  primary: ButtonAttributes;
-  pressed: ButtonAttributes;
+const TEST: ButtonAttributes = {
+  width: 200,
+  height: 100,
+  x: 100,
+  y: 100,
+  isToggle: false,
+  primary: {
+    fill: "black",
+    text: "Hello",
+    fontSize: 12,
+    fontColor: "white",
+    textAlignmentH: "center",
+    textAlignmentV: "middle",
+    strokeWidth: 0,
+    cornerRadius: 0
+  },
+  pressed: {
+    fontSize: 12,
+    fontColor: "white",
+    textAlignmentH: "center",
+    textAlignmentV: "middle",
+    strokeWidth: 0,
+    cornerRadius: 0
+  }
 };
 
 function App() {
+  const [ testObj, setTestObj ] = useState(TEST);
+  const [ fonts, setFonts ] = useState<string[]>([]);
   const stageContainerRef = useRef<HTMLDivElement|null>(null);
+
+  useEffect(() => {
+    invoke<string[]>("list_system_fonts").then(fonts => setFonts(fonts));
+  }, []);
+
+  const handlePositionChange = ({ x, y }: Vector2d) => {
+    setTestObj(ov => Object.assign({}, ov, { x, y }));
+  };
+
   return (
     <main>
       <div className="main-container">
-        <div ref={stageContainerRef}>
-          <Stage width={window.innerWidth} height={stageContainerRef?.current?.offsetHeight}>
+        {/*<div>*/}
+        {/*  {fonts.map(f => <div key={f} style={{ fontFamily: f }}>{f}</div>)}*/}
+        {/*</div>*/}
+        <div className="stage-container" ref={stageContainerRef}>
+          <Stage width={window.innerWidth} height={Math.max(stageContainerRef?.current?.offsetHeight ?? 0, 500)}>
             <Layer>
-              <Group
-                draggable
-                onDragEnd={evt => console.log(evt)}
-              >
-                <Rect
-                  width={100}
-                  height={50}
-                  fill="rgba(0, 255, 0, 0.1)"
-                  stroke="lime"
-                  strokeWidth={2}
-                  cornerRadius={4}
-                />
-                <Text
-                  width={100}
-                  height={50}
-                  verticalAlign="middle"
-                  align="center"
-                  text="Button"
-                  fontSize={12}
-                  fill="lime"
-                />
-              </Group>
+              <Button attr={testObj} state="primary" onChangePosition={handlePositionChange} />
             </Layer>
           </Stage>
         </div>
       </div>
+      {/*<button onClick={() => console.log(testObj)}>Print</button>*/}
+      {/*<input*/}
+      {/*  onChange={(evt) => setTestObj(ov => Object.assign({}, ov, { width: Number.parseInt(evt.target.value) }))}*/}
+      {/*  value={testObj.width}*/}
+      {/*  type="range"*/}
+      {/*  min={0}*/}
+      {/*  max={1000}*/}
+      {/*/>*/}
+      {/*<input*/}
+      {/*  onChange={(evt) => setTestObj(ov => Object.assign({}, ov, { x: Number.parseInt(evt.target.value) }))}*/}
+      {/*  value={testObj.x}*/}
+      {/*  type="range"*/}
+      {/*  min={0}*/}
+      {/*  max={1000}*/}
+      {/*/>*/}
+      <button onClick={() => console.log(buttonSerializer(testObj))}>Serialize</button>
       <StatusBar />
     </main>
   );
