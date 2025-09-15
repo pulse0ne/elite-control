@@ -3,6 +3,7 @@ mod ws;
 mod mobile_assets;
 mod fonts;
 mod vjoystick;
+mod journal;
 
 use std::sync::Arc;
 use tokio::net::TcpListener;

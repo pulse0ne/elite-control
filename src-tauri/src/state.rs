@@ -6,6 +6,8 @@ use tokio::sync::{broadcast, mpsc, Mutex};
 #[serde(rename_all = "camelCase")]
 pub enum ServerEvent {
     LayoutPushed { id: String },
+    AllJournalLines { lines: Vec<String> },
+    NewJournalLines { lines: Vec<String> },
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

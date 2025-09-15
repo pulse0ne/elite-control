@@ -39,7 +39,8 @@ pub async fn vjoy_worker(
         match evt {
             MobileEvent::Press { button, duration } => {
                 device.lock().await.press_button(button, duration).await;
-            }
+            },
+            _ => {}
         }
     }
 
