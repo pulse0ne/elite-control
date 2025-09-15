@@ -31,20 +31,74 @@ html {
     width: 100%;
 }
 
+.row {
+    display: flex;
+    flex-direction: row;
+}
+
+.col {
+    display: flex;
+    flex-direction: column;
+}
+
+.flex-grow {
+    flex-grow: 1;
+}
+
+.fill {
+    width: 100%;
+    height: 100%;
+}
+
+.fill-x {
+    width: 100%;
+}
+
+.fill-y {
+    height: 100%;
+}
+
+.no-overflow {
+    overflow: hidden;
+}
+
+.relative {
+    position: relative;
+}
+
 main {
     width: 100%;
     height: 100%;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .main-container {
     flex-grow: 1;
+    overflow: hidden;
+}
+
+.editor-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.attributes-panel {
+    background-color: rgba(45, 45, 45, 0.8);
+    backdrop-filter: blur(5px);
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 128px;
 }
 
 .stage-container {
+    background-color: rgb(87, 87, 87);
+}
+
+.stage-container > div {
     height: 100%;
-    width: 100%;
 }
 
 .status-bar {

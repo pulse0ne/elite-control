@@ -1,80 +1,28 @@
 import StatusBar from "./StatusBar.tsx";
-import {Layer, Stage} from "react-konva";
-import {useEffect, useRef, useState} from "react";
-import Button, {ButtonAttributes} from "./widgets/Button.tsx";
-import {Vector2d} from "konva/lib/types";
-import {buttonSerializer} from "./widgets/serialization/buttonSerializer.ts";
-import {invoke} from "@tauri-apps/api/core";
+import Editor from "./Editor.tsx";
 
-const TEST: ButtonAttributes = {
-  width: 200,
-  height: 100,
-  x: 100,
-  y: 100,
-  isToggle: false,
-  primary: {
-    fill: "black",
-    text: "Hello",
-    fontSize: 12,
-    fontColor: "white",
-    textAlignmentH: "center",
-    textAlignmentV: "middle",
-    strokeWidth: 0,
-    cornerRadius: 0
-  },
-  pressed: {
-    fontSize: 12,
-    fontColor: "white",
-    textAlignmentH: "center",
-    textAlignmentV: "middle",
-    strokeWidth: 0,
-    cornerRadius: 0
-  }
-};
+/*--------------------
+  TODO:
+- Extract Editor to its own area
+- Develop out Editor
+- Develop Panels/Panel selector
+- Persisting/loading panels/collections
+- Button action types (navigation/press/toggle)
+- Labels
+- Variables (journal extractor on backend)
+- Dynamic Font loading
+- Improved error-handling in Rust code
+- Logger that logs to both file and Desktop UI
+- Sync viewport size button (when clients are attached)
+---------------------*/
 
 function App() {
-  const [ testObj, setTestObj ] = useState(TEST);
-  const [ fonts, setFonts ] = useState<string[]>([]);
-  const stageContainerRef = useRef<HTMLDivElement|null>(null);
-
-  useEffect(() => {
-    invoke<string[]>("list_system_fonts").then(fonts => setFonts(fonts));
-  }, []);
-
-  const handlePositionChange = ({ x, y }: Vector2d) => {
-    setTestObj(ov => Object.assign({}, ov, { x, y }));
-  };
 
   return (
     <main>
       <div className="main-container">
-        {/*<div>*/}
-        {/*  {fonts.map(f => <div key={f} style={{ fontFamily: f }}>{f}</div>)}*/}
-        {/*</div>*/}
-        <div className="stage-container" ref={stageContainerRef}>
-          <Stage width={window.innerWidth} height={Math.max(stageContainerRef?.current?.offsetHeight ?? 0, 500)}>
-            <Layer>
-              <Button attr={testObj} state="primary" onChangePosition={handlePositionChange} />
-            </Layer>
-          </Stage>
-        </div>
+        <Editor />
       </div>
-      {/*<button onClick={() => console.log(testObj)}>Print</button>*/}
-      {/*<input*/}
-      {/*  onChange={(evt) => setTestObj(ov => Object.assign({}, ov, { width: Number.parseInt(evt.target.value) }))}*/}
-      {/*  value={testObj.width}*/}
-      {/*  type="range"*/}
-      {/*  min={0}*/}
-      {/*  max={1000}*/}
-      {/*/>*/}
-      {/*<input*/}
-      {/*  onChange={(evt) => setTestObj(ov => Object.assign({}, ov, { x: Number.parseInt(evt.target.value) }))}*/}
-      {/*  value={testObj.x}*/}
-      {/*  type="range"*/}
-      {/*  min={0}*/}
-      {/*  max={1000}*/}
-      {/*/>*/}
-      <button onClick={() => console.log(buttonSerializer(testObj))}>Serialize</button>
       <StatusBar />
     </main>
   );

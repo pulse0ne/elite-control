@@ -1,10 +1,10 @@
 mod state;
 mod ws;
 mod mobile_assets;
+mod fonts;
 mod vjoystick;
 
 use std::sync::Arc;
-use font_kit::source::SystemSource;
 use tokio::net::TcpListener;
 use local_ip_address::local_ip;
 use tokio::sync::Mutex;
@@ -17,9 +17,8 @@ async fn get_mobile_client_server_address() -> String {
 }
 
 #[tauri::command]
-async fn list_system_fonts() -> Vec<String> {
-    let source = SystemSource::new();
-    source.all_families().unwrap()
+async fn list_system_fonts() -> Vec<fonts::FontSpec> {
+    fonts::list_fonts()
 }
 
 pub async fn run() {
@@ -44,6 +43,7 @@ pub async fn run() {
             tokio::spawn(async move {
                 let app = axum::Router::new()
                     .route("/ws", axum::routing::get(ws::ws_handler))
+                    .route("/fonts/{font}", axum::routing::get(mobile_assets::font_handler))
                     .fallback(axum::routing::get(mobile_assets::static_handler))
                     .with_state(state);
 

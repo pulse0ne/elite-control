@@ -1,9 +1,8 @@
-import {Attributes, Widget} from "./widget.ts";
-import {Group, Rect, Text} from "react-konva";
+import {Attributes, Position, Size, Widget} from "./widget.ts";
+import {Group, Rect, Text, Transformer} from "react-konva";
 import {KonvaEventObject} from "konva/lib/Node";
-import {useCallback} from "react";
+import {useCallback, useEffect, useRef} from "react";
 import {Shape} from "konva/lib/Shape";
-import {Vector2d} from "konva/lib/types";
 
 export type ButtonAttributes = Widget & {
   isToggle: boolean;
@@ -14,7 +13,9 @@ export type ButtonAttributes = Widget & {
 export type ButtonProps = {
   attr: ButtonAttributes;
   state: "primary" | "pressed";
-  onChangePosition: (pos: Vector2d) => void;
+  onSelect: () => void;
+  onUpdate: (sizePos: Size & Position) => void;
+  isSelected?: boolean;
 };
 
 function extractAttr<K extends keyof Attributes>(attrs: ButtonAttributes, state: ButtonProps["state"], key: K): Attributes[K] {
@@ -24,47 +25,78 @@ function extractAttr<K extends keyof Attributes>(attrs: ButtonAttributes, state:
   return attrs.pressed[key] ?? attrs.primary[key];
 }
 
-export default function Button({ attr, state, onChangePosition }: ButtonProps) {
+export default function Button({
+  attr,
+  state,
+  onSelect,
+  onUpdate,
+  isSelected = false
+}: ButtonProps) {
+  const groupRef = useRef<any>(null);
+  const trRef = useRef<any>(null);
 
   const extract = useCallback(function _<K extends keyof Attributes>(key: K): Attributes[K] {
     return extractAttr(attr, state, key);
   }, [attr, state]);
 
   const handleReposition = (evt: KonvaEventObject<DragEvent>) => {
-    // console.log(evt);
     const shape = evt.target as Shape;
-    console.log(`${shape.x()}, ${shape.y()}`);
-    onChangePosition({ x: shape.x(), y: shape.y() });
+    onUpdate({ x: shape.x(), y: shape.y(), width: attr.width, height: attr.height });
   };
 
-  // const isIcon = Boolean(attr[state].icon);
+  const handleTransform = () => {
+    const node = groupRef.current;
+    const scaleX = node.scaleX();
+    const scaleY = node.scaleY();
+    node.scaleX(1);
+    node.scaleY(1);
 
-  console.log("rerender");
+    onUpdate({ x: node.x(), y: node.y(), width: node.width() * scaleX, height: node.height() * scaleY });
+  };
+
+  useEffect(() => {
+    if (isSelected && trRef.current && groupRef.current) {
+      trRef.current.nodes([groupRef.current]);
+      trRef.current.getLayer().batchDraw();
+    }
+  }, [isSelected]);
+
+  console.log("rerender Button");
 
   return (
-    <Group
-      x={attr.x}
-      y={attr.y}
-      draggable
-      onDragEnd={handleReposition}
-    >
-      <Rect
+    <>
+      <Group
+        ref={groupRef}
+        x={attr.x}
+        y={attr.y}
         width={attr.width}
         height={attr.height}
-        fill={extract("fill") ?? undefined}
-        stroke={extract("stroke") ?? undefined}
-        strokeWidth={extract("strokeWidth")}
-        cornerRadius={extract("cornerRadius")}
-      />
-      <Text
-        width={attr.width}
-        height={attr.height}
-        verticalAlign={extract("textAlignmentV")}
-        align={extract("textAlignmentH")}
-        text={extract("text") ?? undefined}
-        fontSize={extract("fontSize")}
-        fill={extract("fontColor")}
-      />
-    </Group>
+        draggable
+        onClick={onSelect}
+        onMouseDown={onSelect}
+        onDragEnd={handleReposition}
+        onTransformEnd={handleTransform}
+      >
+        <Rect
+          width={attr.width}
+          height={attr.height}
+          fill={extract("fill") ?? undefined}
+          stroke={extract("stroke") ?? undefined}
+          strokeWidth={extract("strokeWidth")}
+          cornerRadius={extract("cornerRadius")}
+        />
+        <Text
+          width={attr.width}
+          height={attr.height}
+          verticalAlign={extract("textAlignmentV")}
+          align={extract("textAlignmentH")}
+          text={extract("text") ?? undefined}
+          fontFamily={extract("font") ?? undefined}
+          fontSize={extract("fontSize")}
+          fill={extract("fontColor")}
+        />
+      </Group>
+      {isSelected && <Transformer ref={trRef} rotateEnabled={false} />}
+    </>
   );
 }

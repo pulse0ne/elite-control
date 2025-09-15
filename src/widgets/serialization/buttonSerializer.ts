@@ -7,6 +7,7 @@ export function buttonSerializer(input: ButtonAttributes): ButtonAttributes {
     const k = key as keyof Attributes;
     const v = copy.pressed[k];
     if (v === null || v === undefined) {
+      // @ts-ignore
       copy.pressed[k] = copy.primary[k];
     }
   }
