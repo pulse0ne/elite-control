@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 
+#[derive(Clone)]
 pub struct BoundedFifoVec<T: Clone> {
     data: VecDeque<T>,
     capacity: usize,
@@ -24,27 +25,11 @@ impl<T: Clone> BoundedFifoVec<T> {
         for item in items { self.push(item); } // TODO: optimize
     }
 
-    pub fn pop(&mut self) -> Option<T> {
-        self.data.pop_front()
-    }
-
-    pub fn peek(&self) -> Option<&T> {
-        self.data.back()
-    }
-
     pub fn clear(&mut self) {
         self.data.clear();
     }
 
     pub fn snapshot(&self) -> Vec<T> {
         self.data.iter().map(|item| item.clone().into()).collect()
-    }
-
-    pub fn len(&self) -> usize {
-        self.data.len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.data.is_empty()
     }
 }

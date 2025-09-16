@@ -31,3 +31,14 @@ body {
   align-items: center;
   gap: 24px;
 }
+
+button {
+  background: black;
+  color: white;
+  border: 0;
+  padding: 8px 12px;
+}
+
+button:hover {
+  background: #1f2f2f;
+}

@@ -6,7 +6,7 @@ use futures_util::{SinkExt, StreamExt};
 use serde::Serialize;
 use tauri::Emitter;
 use tokio::sync::Mutex;
-use crate::state::{AppState, MobileEvent};
+use crate::state::{AppState, MobileEvent, ServerEvent};
 
 #[derive(Serialize, Clone)]
 struct ClientCountEvent {
@@ -26,19 +26,24 @@ async fn handle_socket(
 ) {
     println!("Got new websocket connection");
     {
-        // increment count
         let mut count = state.client_count.lock().await;
         *count += 1;
         let _ = state.app_handle.emit("client-count", ClientCountEvent { count: *count });
     }
 
-    // Split socket into sink (tx) and stream (rx)
     let (tx, mut rx) = socket.split();
 
-    // Wrap tx in Arc<Mutex<>> so it can be shared with tasks
     let tx = Arc::new(Mutex::new(tx));
+    
+    
+    let journal = state.journal.lock().await;
+    let msg = ServerEvent::AllJournalEntries { entries: journal.entries() };
+    if let Ok(payload) = serde_json::to_string(&msg) {
+        let tx = tx.clone();
+        let mut chan = tx.lock().await;
+        let _ = chan.send(Message::Text(axum::extract::ws::Utf8Bytes::from(payload))).await;
+    }
 
-    // --- Task: Send server events to this client ---
     let mut sub = state.server_tx.subscribe();
     let tx_clone = Arc::clone(&tx);
     tokio::spawn(async move {

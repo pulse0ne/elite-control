@@ -9,6 +9,7 @@ use std::sync::Arc;
 use tokio::net::TcpListener;
 use local_ip_address::local_ip;
 use tokio::sync::Mutex;
+use crate::journal::Journal;
 use crate::state::{AppState, MobileEvent, ServerEvent};
 use crate::vjoystick::vjoy_worker;
 
@@ -31,19 +32,36 @@ pub async fn run() {
             let (server_tx, _) = tokio::sync::broadcast::channel::<ServerEvent>(32);
 
             let app_handle = app.handle();
+            let journal = Arc::new(Mutex::new(Journal::new("../../journal.log")));
 
             let state = AppState {
                 mobile_tx,
                 server_tx: server_tx.clone(),
                 app_handle: app_handle.clone(),
-                client_count: Arc::new(Mutex::new(0))
+                client_count: Arc::new(Mutex::new(0)),
+                journal: journal.clone(),
             };
+
+            let (tx, mut rx) = tokio::sync::mpsc::channel(100);
+            tokio::spawn({
+                let journal = journal.clone();
+                let server_tx = server_tx.clone();
+                async move {
+                    let _watcher = journal::watch_journal(journal, tx).await.unwrap();
+
+                    while let Some(entries) = rx.recv().await {
+                        println!("Got new entries: {:?}", entries);
+                        let _ = server_tx.send(ServerEvent::NewJournalEntries { entries });
+                    }
+                }
+            });
 
             tokio::spawn(vjoy_worker(mobile_rx, server_tx.clone()));
 
             tokio::spawn(async move {
                 let app = axum::Router::new()
                     .route("/ws", axum::routing::get(ws::ws_handler))
+                    // .route("/journal", axum::routing::get()) // TODO: handler in journal mod
                     .route("/fonts/{font}", axum::routing::get(mobile_assets::font_handler))
                     .fallback(axum::routing::get(mobile_assets::static_handler))
                     .with_state(state);

@@ -14,6 +14,7 @@ import Editor from "./Editor.tsx";
 - Improved error-handling in Rust code
 - Logger that logs to both file and Desktop UI
 - Sync viewport size button (when clients are attached)
+- Audio/haptic feedback?
 ---------------------*/
 
 function App() {
