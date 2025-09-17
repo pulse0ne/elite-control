@@ -11,7 +11,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::TcpListener;
 use local_ip_address::local_ip;
-use log::info;
+use log::{error, info};
 use tokio::sync::Mutex;
 use crate::journal::Journal;
 use crate::state::{AppState, MobileEvent, ServerEvent};
@@ -39,7 +39,8 @@ pub async fn run() {
 
             logging::setup_logging(app_handle.clone());
 
-            let journal = Arc::new(Mutex::new(Journal::new("../../journal.log")));
+            // TODO: find a good way of getting this from config or UI
+            let journal = Arc::new(Mutex::new(Journal::new("../../")));
 
             let state = AppState {
                 mobile_tx,
@@ -54,7 +55,9 @@ pub async fn run() {
                 let journal = journal.clone();
                 let server_tx = server_tx.clone();
                 async move {
-                    let _watcher = journal::watch_journal(journal, tx).await.unwrap();
+                    if let Err(e) = journal::watch_journal(journal, tx).await {
+                        error!("Failed to watch journal: {}", e);
+                    };
 
                     while let Some(entries) = rx.recv().await {
                         info!("Got new entries: {:?}", entries);

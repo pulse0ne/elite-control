@@ -1051,6 +1051,7 @@ dependencies = [
  "log4rs",
  "mime_guess",
  "notify",
+ "regex",
  "serde",
  "serde_json",
  "tauri",
