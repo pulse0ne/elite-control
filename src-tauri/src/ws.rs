@@ -56,7 +56,7 @@ async fn handle_socket(
             if let Ok(evt) = serde_json::from_str::<MobileEvent>(&txt) {
                 match evt {
                     MobileEvent::ViewportReport { width, height } => {
-                        info!("Got viewportReport from {:?}", addr);
+                        info!("Got viewportReport from {:?}: {}x{}", addr, width, height);
                         let mut clients = state.mobile_clients.lock().await;
                         clients.push(MobileClient { ip_addr: addr, viewport_width: width, viewport_height: height });
                         let _ = state.app_handle.emit("clients-updated-event", clients.clone());

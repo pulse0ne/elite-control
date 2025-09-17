@@ -75,8 +75,8 @@ pub async fn run() {
                     .fallback(axum::routing::get(mobile_assets::static_handler))
                     .with_state(state);
 
-                info!("Serving mobile client on http://0.0.0.0:8787/");
-                let listener = TcpListener::bind("0.0.0.0:8787").await.unwrap();
+                info!("Serving mobile client on http://0.0.0.0:11011/");
+                let listener = TcpListener::bind("0.0.0.0:11011").await.unwrap();
                 axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>()).await.unwrap();
             });
 

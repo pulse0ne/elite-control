@@ -24,28 +24,28 @@ pub struct Attributes {
     pub icon: Option<String>,
     pub text: Option<String>,
     pub font: Option<String>,
-    pub font_size: u64,
+    pub font_size: f64,
     pub font_color: String,
     pub text_alignment_h: HorizontalAlignment,
     pub text_alignment_v: VerticalAlignment,
     pub fill: Option<String>,
     pub stroke: Option<String>,
-    pub stroke_width: u64,
-    pub corner_radius: u64,
+    pub stroke_width: f64,
+    pub corner_radius: f64,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Size {
-    pub width: u64,
-    pub height: u64,
+    pub width: f64,
+    pub height: f64,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Position {
-    pub x: u64,
-    pub y: u64,
+    pub x: f64,
+    pub y: f64,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]

@@ -7,30 +7,42 @@ import {KonvaEventObject} from "konva/lib/Node";
 import {Konva} from "konva/lib/_FullInternals";
 
 const TEST: ButtonAttributes = {
+  type: "button",
   width: 200,
   height: 100,
-  x: 100,
-  y: 100,
-  isToggle: false,
+  x: 0,
+  y: 0,
+  buttonType: "action",
+  navTarget: null,
   primary: {
-    fill: "lime",
+    fill: "rgba(0, 255, 0, 0.7)",
     text: "Hello",
-    fontSize: 12,
+    fontSize: 16,
     fontColor: "black",
     textAlignmentH: "center",
     textAlignmentV: "middle",
-    strokeWidth: 0,
-    cornerRadius: 0
+    strokeWidth: 2,
+    cornerRadius: 8,
+    icon: null,
+    font: null,
+    stroke: "lime"
   },
   pressed: {
-    fontSize: 12,
+    fontSize: 16,
     fontColor: "white",
     textAlignmentH: "center",
     textAlignmentV: "middle",
     strokeWidth: 0,
-    cornerRadius: 0
+    cornerRadius: 0,
+    icon: null,
+    text: null,
+    font: null,
+    fill: null,
+    stroke: null
   }
 };
+
+const SCALE_FACTOR = 1.01;
 
 type FontSpec = {
   name: string;
@@ -43,7 +55,7 @@ export default function Editor() {
   const [ workspaceSize, _setWorkspaceSize ] = useState<Size>({ width: 1200, height: 800 });
   const [ stageSize, setStageSize ] = useState<Size>({ width: 1200, height: 800 });
   const [ stagePosition, setStagePosition ] = useState<Position>({ x: 600, y: 400 });
-  const [ stageScale, _setStageScale ] = useState<number>(1.0);
+  const [ stageScale, setStageScale ] = useState<number>(1.0);
   const stageContainerRef = useRef<HTMLDivElement|null>(null);
   const stageRef = useRef<any>(null);
 
@@ -77,7 +89,7 @@ export default function Editor() {
   };
 
   const handleDeselect = (evt: KonvaEventObject<MouseEvent>) => {
-    if (evt.target instanceof Konva.Stage) {
+    if (evt.target instanceof Konva.Stage || evt.target.id() === "bg") {
       setSelectedItem(null);
     }
   };
@@ -87,6 +99,31 @@ export default function Editor() {
       const evtPos = evt.target.position();
       setStagePosition({x: evtPos.x, y: evtPos.y});
     }
+  };
+
+  const handleWheel = (evt: KonvaEventObject<WheelEvent>) => {
+    evt.evt.preventDefault();
+
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    const oldScale = stageScale;
+    const pointer = stage.getPointerPosition();
+
+    const mousePointTo = {
+      x: (pointer.x - stagePosition.x) / oldScale,
+      y: (pointer.y - stagePosition.y) / oldScale,
+    };
+
+    const direction = evt.evt.deltaY > 0 ? -1 : 1;
+    const newScale = direction > 0 ? oldScale * SCALE_FACTOR : oldScale / SCALE_FACTOR;
+
+    setStageScale(newScale);
+
+    setStagePosition({
+      x: pointer.x - mousePointTo.x * newScale,
+      y: pointer.y - mousePointTo.y * newScale,
+    });
   };
 
   return (
@@ -103,11 +140,13 @@ export default function Editor() {
             x={stagePosition.x}
             y={stagePosition.y}
             draggable
-            onClick={handleDeselect}
+            onMouseDown={handleDeselect}
             onDragEnd={handleStageDrag}
+            onWheel={handleWheel}
           >
             <Layer>
               <Rect
+                id="bg"
                 x={0}
                 y={0}
                 width={workspaceSize.width}
@@ -127,7 +166,7 @@ export default function Editor() {
             </Layer>
           </Stage>
         </div>
-        <AttributesPanel />
+        <AttributesPanel onPrint={() => console.log(testObj)} />
       </div>
     </div>
   );
@@ -141,7 +180,11 @@ function TopBar() {
   );
 }
 
-function AttributesPanel() {
+type AttributesPanelProps = {
+  onPrint: () => void;
+};
+
+function AttributesPanel({ onPrint }: AttributesPanelProps) {
   const [ _fonts, setFonts ] = useState<FontSpec[]>([]);
 
   useEffect(() => {
@@ -151,6 +194,7 @@ function AttributesPanel() {
   return (
     <div className="attributes-panel fill-y">
       TODO
+      <button onClick={onPrint}>Print</button>
     </div>
   );
 }

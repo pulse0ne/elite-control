@@ -26,45 +26,30 @@ html {
     overflow: hidden;
 }
 
+* {
+    box-sizing: border-box;
+}
+
 #root {
     height: 100%;
     width: 100%;
 }
 
-.row {
-    display: flex;
-    flex-direction: row;
-}
-
-.col {
-    display: flex;
-    flex-direction: column;
-}
-
-.flex-grow {
-    flex-grow: 1;
-}
-
-.fill {
-    width: 100%;
-    height: 100%;
-}
-
-.fill-x {
-    width: 100%;
-}
-
-.fill-y {
-    height: 100%;
-}
-
-.no-overflow {
-    overflow: hidden;
-}
-
-.relative {
-    position: relative;
-}
+/* utilities */
+.row { display: flex; flex-direction: row; }
+.col { display: flex; flex-direction: column; }
+.flex-grow, .flex-grow-1 { flex-grow: 1; }
+.flex-grow-2 { flex-grow: 2; }
+.flex-grow-3 { flex-grow: 3; }
+.flex-grow-4 { flex-grow: 4; }
+.flex-auto { flex: auto; }
+.justify-center { justify-content: center; }
+.align-center { align-items: center; }
+.fill { width: 100%; height: 100%; }
+.fill-x { width: 100%; }
+.fill-y { height: 100%; }
+.no-overflow { overflow: hidden; }
+.relative { position: relative; }
 
 main {
     width: 100%;
@@ -72,6 +57,10 @@ main {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+}
+
+a, a:visited {
+    color: rgb(117, 255, 25);
 }
 
 .main-container {
@@ -100,29 +89,3 @@ main {
 .stage-container > div {
     height: 100%;
 }
-
-.status-bar {
-    background-color: rgb(32, 32, 32);
-    height: 24px;
-    display: flex;
-    flex-direction: row;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
-    justify-content: space-between;
-    align-items: center;
-    font-size: 12px;
-    padding: 0 12px;
-}
-
-.qr-code-container {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background-color: black;
-}
-
