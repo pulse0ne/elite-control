@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 
+const msgBuffer: string[] = [];
+
 export function useWebsocket(url: string) {
   const socketRef = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -13,7 +15,12 @@ export function useWebsocket(url: string) {
     const socket = new WebSocket(url);
     socketRef.current = socket;
 
-    socket.onopen = () => setIsConnected(true);
+    socket.onopen = () => {
+      setIsConnected(true);
+      if (msgBuffer.length) {
+        msgBuffer.forEach(msg => socket.send(msg));
+      }
+    };
     socket.onclose = () => setIsConnected(false);
     socket.onerror = () => setIsConnected(false);
     socket.onmessage = (event) => {
@@ -41,8 +48,12 @@ export function useWebsocket(url: string) {
   }, [connect, isConnected]);
 
   const sendMessage = useCallback((msg: any) => {
+    const payload = JSON.stringify(msg);
     if (socketRef.current?.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify(msg));
+      socketRef.current.send(payload);
+    } else {
+      console.log("not connected...buffering message");
+      msgBuffer.push(payload);
     }
   }, []);
 

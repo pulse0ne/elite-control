@@ -11,6 +11,7 @@ mod mock;
 pub use mock::MockDevice;
 
 use std::sync::Arc;
+use log::{info, trace};
 use tokio::sync::{broadcast, mpsc, Mutex};
 use crate::state::{MobileEvent, ServerEvent};
 
@@ -33,9 +34,9 @@ pub async fn vjoy_worker(
             Arc::new(Mutex::new(MockDevice))
         }
     };
-    println!("vJoy worker running...");
+    info!("vJoy worker running...");
     while let Some(evt) = mobile_rx.recv().await {
-        println!("Received mobile event: {:?}", evt);
+        trace!("Received mobile event: {:?}", evt);
         match evt {
             MobileEvent::Press { button, duration } => {
                 device.lock().await.press_button(button, duration).await;

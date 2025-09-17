@@ -1,13 +1,17 @@
+mod logging;
 mod state;
 mod ws;
 mod mobile_assets;
 mod fonts;
 mod vjoystick;
 mod journal;
+mod widget;
 
+use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::TcpListener;
 use local_ip_address::local_ip;
+use log::info;
 use tokio::sync::Mutex;
 use crate::journal::Journal;
 use crate::state::{AppState, MobileEvent, ServerEvent};
@@ -32,13 +36,16 @@ pub async fn run() {
             let (server_tx, _) = tokio::sync::broadcast::channel::<ServerEvent>(32);
 
             let app_handle = app.handle();
+
+            logging::setup_logging(app_handle.clone());
+
             let journal = Arc::new(Mutex::new(Journal::new("../../journal.log")));
 
             let state = AppState {
                 mobile_tx,
                 server_tx: server_tx.clone(),
                 app_handle: app_handle.clone(),
-                client_count: Arc::new(Mutex::new(0)),
+                mobile_clients: Arc::new(Mutex::new(vec![])),
                 journal: journal.clone(),
             };
 
@@ -50,25 +57,24 @@ pub async fn run() {
                     let _watcher = journal::watch_journal(journal, tx).await.unwrap();
 
                     while let Some(entries) = rx.recv().await {
-                        println!("Got new entries: {:?}", entries);
+                        info!("Got new entries: {:?}", entries);
                         let _ = server_tx.send(ServerEvent::NewJournalEntries { entries });
                     }
                 }
             });
 
             tokio::spawn(vjoy_worker(mobile_rx, server_tx.clone()));
-
+            
             tokio::spawn(async move {
                 let app = axum::Router::new()
                     .route("/ws", axum::routing::get(ws::ws_handler))
-                    // .route("/journal", axum::routing::get()) // TODO: handler in journal mod
                     .route("/fonts/{font}", axum::routing::get(mobile_assets::font_handler))
                     .fallback(axum::routing::get(mobile_assets::static_handler))
                     .with_state(state);
 
-                println!("Serving mobile client on http://0.0.0.0:8787/");
+                info!("Serving mobile client on http://0.0.0.0:8787/");
                 let listener = TcpListener::bind("0.0.0.0:8787").await.unwrap();
-                axum::serve(listener, app).await.unwrap();
+                axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>()).await.unwrap();
             });
 
             Ok(())

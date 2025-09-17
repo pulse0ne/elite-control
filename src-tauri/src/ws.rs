@@ -1,41 +1,32 @@
+use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
-use axum::extract::{State, WebSocketUpgrade};
+use axum::extract::{ConnectInfo, State, WebSocketUpgrade};
 use axum::extract::ws::{Message, WebSocket};
 use axum::response::IntoResponse;
 use futures_util::{SinkExt, StreamExt};
-use serde::Serialize;
+use log::info;
 use tauri::Emitter;
 use tokio::sync::Mutex;
-use crate::state::{AppState, MobileEvent, ServerEvent};
-
-#[derive(Serialize, Clone)]
-struct ClientCountEvent {
-    count: usize,
-}
+use crate::state::{AppState, MobileClient, MobileEvent, ServerEvent};
 
 pub async fn ws_handler(
     ws: WebSocketUpgrade,
     State(state): State<AppState>,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
 ) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| handle_socket(socket, state))
+    ws.on_upgrade(move |socket| handle_socket(socket, state, addr.ip()))
 }
 
 async fn handle_socket(
     socket: WebSocket,
     state: AppState,
+    addr: IpAddr,
 ) {
-    println!("Got new websocket connection");
-    {
-        let mut count = state.client_count.lock().await;
-        *count += 1;
-        let _ = state.app_handle.emit("client-count", ClientCountEvent { count: *count });
-    }
+    info!("Got new websocket connection: {:?}", addr); // TODO: save IPs
 
     let (tx, mut rx) = socket.split();
 
     let tx = Arc::new(Mutex::new(tx));
-    
-    
     let journal = state.journal.lock().await;
     let msg = ServerEvent::AllJournalEntries { entries: journal.entries() };
     if let Ok(payload) = serde_json::to_string(&msg) {
@@ -60,20 +51,29 @@ async fn handle_socket(
         }
     });
 
-    // --- Task: Receive events from client ---
     while let Some(Ok(msg)) = rx.next().await {
         if let Message::Text(txt) = msg {
             if let Ok(evt) = serde_json::from_str::<MobileEvent>(&txt) {
-                let _ = state.mobile_tx.send(evt).await; // ignore if receiver dropped
+                match evt {
+                    MobileEvent::ViewportReport { width, height } => {
+                        info!("Got viewportReport from {:?}", addr);
+                        let mut clients = state.mobile_clients.lock().await;
+                        clients.push(MobileClient { ip_addr: addr, viewport_width: width, viewport_height: height });
+                        let _ = state.app_handle.emit("clients-updated-event", clients.clone());
+                    },
+                    _ => {
+                        let _ = state.mobile_tx.send(evt).await;
+                    }
+                }
             }
         }
     }
 
-    println!("WebSocket client disconnected");
+    info!("WebSocket client disconnected: {:?}", addr);
 
     {
-        let mut count = state.client_count.lock().await;
-        *count -= 1;
-        let _ = state.app_handle.emit("client-count", ClientCountEvent { count: *count });
+        let mut clients = state.mobile_clients.lock().await;
+        *clients = clients.clone().into_iter().filter(|c| c.ip_addr != addr).collect();
+        let _ = state.app_handle.emit("clients-updated-event", clients.clone());
     }
 }

@@ -36,7 +36,7 @@ pub async fn static_handler(
 // #[axum::debug_handler]
 pub async fn font_handler(Path(font): Path<String>) -> impl IntoResponse {
     let last_period = font.rfind(".").unwrap();
-    println!("{:#?}", font);
+    // println!("{:#?}", font);
     let font_path = match get_font_path(&font[0..last_period]) {
         Ok(path) => path,
         Err(_) => return (StatusCode::NOT_FOUND, "Not found").into_response(),

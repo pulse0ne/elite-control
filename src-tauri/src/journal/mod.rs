@@ -9,6 +9,7 @@ use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use tokio::sync::mpsc::Sender;
 use tokio::sync::Mutex;
 use anyhow::Result;
+use log::{error, info};
 use crate::journal::bounded_fifo_vec::BoundedFifoVec;
 
 #[derive(Clone)]
@@ -60,7 +61,7 @@ pub async fn watch_journal(
     tx: Sender<Vec<String>>,
 ) -> Result<RecommendedWatcher> {
     let journal_path = journal.lock().await.journal_path.clone();
-    println!("watching journal: {}", journal_path.display());
+    info!("watching journal: {}", journal_path.display());
 
     let (sync_tx, sync_rx) = std_mpsc::channel::<()>();
 
@@ -94,7 +95,7 @@ pub async fn watch_journal(
                     let _ = sync_tx.send(());
                 }
             }
-            Err(e) => eprintln!("watch error: {:?}", e),
+            Err(e) => error!("watch error: {:?}", e),
         }
     })?;
 

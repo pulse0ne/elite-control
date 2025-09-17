@@ -4,8 +4,12 @@ import {KonvaEventObject} from "konva/lib/Node";
 import {useCallback, useEffect, useRef} from "react";
 import {Shape} from "konva/lib/Shape";
 
+export type ButtonType = "action" | "navigation" | "toggle";
+
 export type ButtonAttributes = Widget & {
-  isToggle: boolean;
+  type: "button",
+  buttonType: ButtonType,
+  navTarget: string | null,
   primary: Attributes;
   pressed: Attributes;
 };

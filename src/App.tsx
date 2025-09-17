@@ -1,23 +1,43 @@
 import StatusBar from "./StatusBar.tsx";
 import Editor from "./Editor.tsx";
+import {useEffect, useState} from "react";
+import useTauriListen from "./hooks/useTauriListen.tsx";
 
 /*--------------------
   TODO:
-- Extract Editor to its own area
 - Develop out Editor
 - Develop Panels/Panel selector
 - Persisting/loading panels/collections
-- Button action types (navigation/press/toggle)
 - Labels
-- Variables (journal extractor on backend)
-- Dynamic Font loading
+- Dynamic Font loading (hook front-end up to it)
 - Improved error-handling in Rust code
-- Logger that logs to both file and Desktop UI
 - Sync viewport size button (when clients are attached)
 - Audio/haptic feedback?
 ---------------------*/
 
+type LogEntry = {
+  level: string;
+  timestamp: string;
+  message: string;
+};
+
 function App() {
+  const [ log, setLog ] = useState<LogEntry[]>([]);
+
+  const { lastEvent, unlisten } = useTauriListen<LogEntry>("log-event");
+
+  useEffect(() => {
+    console.log(lastEvent);
+    if (lastEvent) {
+      setLog(ov => [...ov, lastEvent]);
+    }
+  }, [lastEvent]);
+
+  useEffect(() => {
+    return () => {
+      unlisten();
+    };
+  }, []);
 
   return (
     <main>
@@ -25,6 +45,8 @@ function App() {
         <Editor />
       </div>
       <StatusBar />
+      {/* TODO: component for this */}
+      {log.map(l => <div key={l.timestamp}>{l.level} - {l.message}</div>)}
     </main>
   );
 }

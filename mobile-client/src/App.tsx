@@ -7,8 +7,21 @@ function App() {
     <WebsocketProvider>
       <Dummy />
       <ConnectionOverlay />
+      <ViewportReporter />
     </WebsocketProvider>
   );
+}
+
+function ViewportReporter() {
+  const { sendMessage } = useAppWebsocket();
+
+  useEffect(() => {
+    const { clientWidth, clientHeight } = document.documentElement;
+    console.log("sending viewport dimensions");
+    sendMessage({ viewportReport: { width: clientWidth, height: clientHeight }});
+  }, []);
+
+  return null;
 }
 
 function Dummy() {

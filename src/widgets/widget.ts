@@ -1,13 +1,13 @@
 export type Attributes = {
-    icon?: string | null;
-    text?: string | null;
-    font?: string | null;
+    icon: string | null;
+    text: string | null;
+    font: string | null;
     fontSize: number;
     fontColor: string;
     textAlignmentH: "left" | "center" | "right";
     textAlignmentV: "top" | "middle" | "bottom";
-    fill?: string | null;
-    stroke?: string | null;
+    fill: string | null;
+    stroke: string | null;
     strokeWidth: number;
     cornerRadius: number;
 };
