@@ -5,12 +5,15 @@ import Editor from "./Editor.tsx";
   TODO:
 - Develop out Editor
 - Develop Panels/Panel selector
-- Persisting/loading panels/collections
+- Persisting/loading panes/pane sets
 - Labels
 - Dynamic Font loading (hook front-end up to it)
 - Improved error-handling in Rust code
+- Undo/Redo
 - Sync viewport size button (when clients are attached)
 - Audio/haptic feedback?
+- Better UI theme
+- Pane themes?
 ---------------------*/
 
 function App() {

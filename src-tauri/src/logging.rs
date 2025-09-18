@@ -1,8 +1,7 @@
-use std::env;
+use std::{env, fs};
 use chrono::Local;
 use log4rs::append::Append;
 use log4rs::append::console::ConsoleAppender;
-use log4rs::append::file::FileAppender;
 use log4rs::append::rolling_file::policy::compound::CompoundPolicy;
 use log4rs::append::rolling_file::policy::compound::roll::fixed_window::FixedWindowRoller;
 use log4rs::append::rolling_file::policy::compound::trigger::size::SizeTrigger;
@@ -52,6 +51,13 @@ impl LogMessage {
 }
 
 fn make_rolling_file_appender() -> RollingFileAppender {
+    let data_dir = dirs::data_local_dir().unwrap_or_default();
+    let ec_dir = data_dir.join("elite-control");
+    
+    if !ec_dir.exists() {
+        let _ = fs::create_dir(&ec_dir);
+    }
+    
     let trigger = SizeTrigger::new(10 * 1024 * 1024);
 
     let roller = FixedWindowRoller::builder()
@@ -61,7 +67,7 @@ fn make_rolling_file_appender() -> RollingFileAppender {
     let policy = CompoundPolicy::new(Box::new(trigger), Box::new(roller));
 
     RollingFileAppender::builder()
-        .build("elite-control.log", Box::new(policy))
+        .build(ec_dir.join("elite-control.log"), Box::new(policy))
         .unwrap()
 }
 

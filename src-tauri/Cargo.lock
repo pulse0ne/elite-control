@@ -1043,6 +1043,7 @@ dependencies = [
  "async-trait",
  "axum",
  "chrono",
+ "dirs",
  "font-kit",
  "futures-util",
  "include_dir",
