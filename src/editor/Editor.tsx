@@ -1,10 +1,11 @@
 import {Layer, Rect, Stage} from "react-konva";
 import {useEffect, useRef, useState} from "react";
 import {invoke} from "@tauri-apps/api/core";
-import Button, {ButtonAttributes} from "./widgets/Button.tsx";
-import {Position, Size} from "./widgets/widget.ts";
+import Button, {ButtonAttributes} from "../widgets/Button.tsx";
+import {Position, Size} from "../widgets/widget.ts";
 import {KonvaEventObject} from "konva/lib/Node";
 import {Konva} from "konva/lib/_FullInternals";
+import "./editor.css";
 
 const TEST: ButtonAttributes = {
   type: "button",

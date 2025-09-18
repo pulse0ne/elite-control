@@ -3,9 +3,15 @@
     line-height: 1.5;
     font-weight: 400;
 
-    color-scheme: light dark;
-    color: rgba(255, 255, 255, 0.87);
-    background-color: #242424;
+    --bg-color: #1e201e;
+    --dark-bg-color: #191c1a;
+    --light-bg-color: #3c3d37;
+    --accent-color: #697565;
+    --text-color: #ecdfcc;
+
+    color-scheme: normal;
+    color: var(--text-color);
+    background-color: var(--bg-color);
 
     font-synthesis: none;
     text-rendering: optimizeLegibility;
@@ -51,6 +57,7 @@ html {
 .no-overflow { overflow: hidden; }
 .relative { position: relative; }
 
+/* components */
 main {
     width: 100%;
     height: 100%;
@@ -60,7 +67,17 @@ main {
 }
 
 a, a:visited {
-    color: rgb(117, 255, 25);
+    color: var(--accent-color);
+}
+
+button {
+    background: var(--accent-color);
+    color: var(--text-color);
+    border: none;
+    border-radius: 8px;
+    padding: 6px 8px;
+    font-weight: bold;
+    cursor: pointer;
 }
 
 .main-container {
@@ -74,7 +91,7 @@ a, a:visited {
 }
 
 .attributes-panel {
-    background-color: rgba(45, 45, 45, 0.8);
+    background-color: var(--light-bg-color);
     backdrop-filter: blur(5px);
     position: absolute;
     right: 0;
@@ -83,7 +100,7 @@ a, a:visited {
 }
 
 .stage-container {
-    background-color: rgb(87, 87, 87);
+    background-color: var(--dark-bg-color);
 }
 
 .stage-container > div {

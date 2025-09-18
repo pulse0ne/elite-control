@@ -14,7 +14,7 @@ export function QrCodeOverlay({ open, serverIp, onClose }: QrCodeOverlayProps) {
     if (canvas) {
       QRCode.toCanvas(canvas, url, { width: 200, color: { dark: "#fff", light: "#000" } });
     }
-  }, [serverIp]);
+  }, [open]);
 
   if (!open) return null;
   return (

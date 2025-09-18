@@ -65,8 +65,6 @@ export default function Button({
     }
   }, [isSelected]);
 
-  console.log("rerender Button");
-
   return (
     <>
       <Group

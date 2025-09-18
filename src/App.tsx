@@ -1,5 +1,5 @@
 import StatusBar from "./statusbar/StatusBar.tsx";
-import Editor from "./Editor.tsx";
+import Editor from "./editor/Editor.tsx";
 
 /*--------------------
   TODO:
