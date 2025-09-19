@@ -4,18 +4,23 @@
 }
 
 .attributes-panel {
-    background-color: rgba(var(--light-bg-color), 0.5);
-    backdrop-filter: blur(5px);
-    position: absolute;
-    right: 0;
-    top: 0;
-    width: 300px;
+    background-color: var(--panel-color-hex);
+    width: 320px;
+    min-width: 320px;
+    padding: 12px;
+    border-left: var(--border-light);
 }
 
 .stage-container {
-    background-color: var(--dark-bg-color);
+    background-color: var(--editor-background-color-hex);
 }
 
 .stage-container > div {
     height: 100%;
+}
+
+.toolbar {
+    background-color: var(--toolbar-color-hex);
+    padding: 8px 12px;
+    border-bottom: var(--border-light);
 }

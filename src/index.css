@@ -3,15 +3,38 @@
     line-height: 1.5;
     font-weight: 400;
 
-    --bg-color: #1e201e;
-    --dark-bg-color: #191c1a;
-    --light-bg-color: #3c3d37;
-    --accent-color: #697565;
-    --text-color: #ecdfcc;
+    --editor-background-color-hex: #2f3336;
+    --toolbar-color-hex: #202223;
+    --panel-color-hex: #17181a;
+    --text-color-light-hex: #ecdfcc;
+    --text-color-dark-hex: #0f0f0f;
+
+    --editor-background-color-values: 51, 51, 51;
+    --panel-color-values: 22, 22, 22;
+
+    --gradient-stop1: #bd49b7;
+    --gradient-stop2: #4956e4;
+
+    --border-light: 1px solid rgba(255, 255, 255, 0.2);
+
+    /* gg colors */
+    /*--gg-color1: #09090b; !* background *!*/
+    /*--gg-color2: #0f0f11; !* elevation *!*/
+    /*--gg-color3: #1b1b1d; !* panels *!*/
+    /*--gg-color4: #1e533a; !* button border *!*/
+    /*--gg-color5: #10201a; !* button color (probably transparency) *!*/
+
+    /* gg forge colors */
+    /*--gg-forge-color1: #101219; !* editor background *!*/
+    /*--gg-forge-color2: #232630; !* elevation *!*/
+    /*--gg-forge-color3: #2a2e3a; !* panels *!*/
+    /*--gg-forge-color4: #339865; !* buttons *!*/
+    /*--gg-forge-color5: #fd5947; !* clear buttons *!*/
+    /*************/
 
     color-scheme: normal;
-    color: var(--text-color);
-    background-color: var(--bg-color);
+    color: var(--text-color-light-hex);
+    background-color: var(--editor-background-color-hex);
 
     font-synthesis: none;
     text-rendering: optimizeLegibility;
@@ -67,17 +90,31 @@ main {
 }
 
 a, a:visited {
-    color: var(--accent-color);
+    color: var(--gradient-stop1);
+    text-decoration: none;
 }
 
 button {
-    background: var(--accent-color);
-    color: var(--text-color);
-    border: none;
-    border-radius: 8px;
-    padding: 6px 8px;
+    background-image: linear-gradient(to bottom right, var(--gradient-stop1), var(--gradient-stop2));
+    color: var(--text-color-light-hex);
+    border: 0;
+    border-radius: 4px;
+    padding: 6px 16px;
     font-weight: bold;
     cursor: pointer;
+}
+
+input {
+    background: var(--editor-background-color-hex);
+    border: var(--border-light);
+    border-radius: 4px;
+    padding: 2px;
+    color: var(--text-color-light-hex);
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--gradient-stop1);
 }
 
 .main-container {

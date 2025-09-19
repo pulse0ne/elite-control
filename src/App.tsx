@@ -1,5 +1,6 @@
 import StatusBar from "./statusbar/StatusBar.tsx";
 import Editor from "./editor/Editor.tsx";
+import {DevicesProvider} from "./hooks/useDevices.tsx";
 
 /*--------------------
   TODO:
@@ -21,10 +22,12 @@ import Editor from "./editor/Editor.tsx";
 function App() {
   return (
     <main>
-      <div className="main-container">
-        <Editor />
-      </div>
-      <StatusBar />
+      <DevicesProvider>
+        <div className="main-container">
+          <Editor />
+        </div>
+        <StatusBar />
+      </DevicesProvider>
     </main>
   );
 }

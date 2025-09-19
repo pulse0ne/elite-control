@@ -1,32 +1,33 @@
 import {Layer, Rect, Stage} from "react-konva";
 import {useEffect, useRef, useState} from "react";
 import Button, {ButtonAttributes} from "../widgets/Button.tsx";
-import {Position, Size} from "../widgets/widget.ts";
+import {Position, Size, Widget} from "../widgets/widget.ts";
 import {KonvaEventObject} from "konva/lib/Node";
 import {Konva} from "konva/lib/_FullInternals";
 import "./editor.css";
 import {AttributesPanel} from "./AttributesPanel.tsx";
+import {Toolbar} from "./Toolbar.tsx";
 
 const TEST: ButtonAttributes = {
   type: "button",
   width: 200,
   height: 100,
-  x: 0,
-  y: 0,
+  x: 400,
+  y: 400,
   buttonType: "action",
   navTarget: null,
   primary: {
-    fill: "rgba(0, 201, 102, 0.7)",
+    fill: "rgb(56,30,83)",
     text: "Hello",
     fontSize: 16,
-    fontColor: "black",
+    fontColor: "white",
     textAlignmentH: "center",
     textAlignmentV: "middle",
     strokeWidth: 2,
     cornerRadius: 8,
     icon: null,
     font: null,
-    stroke: "rgb(0, 201, 102)"
+    stroke: "rgb(130,51,152)"
   },
   pressed: {
     fontSize: 16,
@@ -43,12 +44,12 @@ const TEST: ButtonAttributes = {
   }
 };
 
-const SCALE_FACTOR = 1.01;
+const SCALE_FACTOR = 1.05;
 
 export default function Editor() {
   const [ testObj, setTestObj ] = useState(TEST);
   const [ selectedItem, setSelectedItem ] = useState<number|null>(null);
-  const [ workspaceSize, _setWorkspaceSize ] = useState<Size>({ width: 1200, height: 800 });
+  const [ workspaceSize, setWorkspaceSize ] = useState<Size>({ width: 1200, height: 800 });
   const [ stageSize, setStageSize ] = useState<Size>({ width: 1200, height: 800 });
   const [ stagePosition, setStagePosition ] = useState<Position>({ x: 600, y: 400 });
   const [ stageScale, setStageScale ] = useState<number>(1.0);
@@ -122,57 +123,64 @@ export default function Editor() {
     });
   };
 
+  const handleWidgetAdded = (widget: Widget) => {
+    console.log(widget);
+    // TODO
+  };
+
+  const handleDimensionsChange = (size: Size) => {
+    console.log(size);
+    setWorkspaceSize(size);
+  };
+
   return (
     <div className="editor-container fill-y">
-      <TopBar />
-      <div className="col fill no-overflow relative">
-        <div className="stage-container flex-grow" ref={stageContainerRef}>
-          <Stage
-            ref={stageRef}
-            width={stageSize.width}
-            height={stageSize.height}
-            scaleX={stageScale}
-            scaleY={stageScale}
-            x={stagePosition.x}
-            y={stagePosition.y}
-            draggable
-            onMouseDown={handleDeselect}
-            onDragEnd={handleStageDrag}
-            onWheel={handleWheel}
-          >
-            <Layer>
-              <Rect
-                id="bg"
-                x={0}
-                y={0}
-                width={workspaceSize.width}
-                height={workspaceSize.height}
-                fill="#000"
-              />
-            </Layer>
-            <Layer>
-              {/* TODO: add real components here */}
-              <Button
-                attr={testObj}
-                state="primary"
-                isSelected={selectedItem === 1}
-                onSelect={() => setSelectedItem(1)}
-                onUpdate={handleUpdate}
-              />
-            </Layer>
-          </Stage>
+      <Toolbar
+        dimensions={workspaceSize}
+        onAddWidget={handleWidgetAdded}
+        onDimensionsChange={handleDimensionsChange}
+      />
+      <div className="row fill no-overflow">
+        <div className="flex-grow no-overflow">
+          <div className="stage-container fill-y" ref={stageContainerRef}>
+            <Stage
+              ref={stageRef}
+              width={stageSize.width}
+              height={stageSize.height}
+              scaleX={stageScale}
+              scaleY={stageScale}
+              x={stagePosition.x}
+              y={stagePosition.y}
+              draggable
+              onMouseDown={handleDeselect}
+              onDragEnd={handleStageDrag}
+              onWheel={handleWheel}
+            >
+              <Layer>
+                <Rect
+                  id="bg"
+                  x={0}
+                  y={0}
+                  width={workspaceSize.width}
+                  height={workspaceSize.height}
+                  fill="#000"
+                />
+              </Layer>
+              <Layer>
+                {/* TODO: add real components here */}
+                <Button
+                  attr={testObj}
+                  state="primary"
+                  isSelected={selectedItem === 1}
+                  onSelect={() => setSelectedItem(1)}
+                  onUpdate={handleUpdate}
+                />
+              </Layer>
+            </Stage>
+          </div>
         </div>
         <AttributesPanel onPrint={() => console.log(testObj)} />
       </div>
     </div>
   );
 }
-
-function TopBar() {
-  return (
-    <div className="topbar">
-      <button>+ Add</button>
-    </div>
-  );
-}
-

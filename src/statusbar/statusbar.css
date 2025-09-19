@@ -1,9 +1,9 @@
 .status-bar {
-    background-color: rgb(32, 32, 32);
+    background-color: var(--toolbar-color-hex);
     height: 24px;
     display: flex;
     flex-direction: row;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-top: var(--border-light);
     justify-content: space-between;
     align-items: center;
     font-size: 12px;
@@ -20,8 +20,8 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: rgba(35, 35, 35, 0.8);
-    backdrop-filter: blur(2px);
+    background-color: rgba(35, 35, 35, 0.9);
+    backdrop-filter: blur(4px);
 }
 
 #qr-code {
@@ -32,7 +32,7 @@
 .logs-container {
     padding: 16px;
     overflow-y: auto;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    border-bottom: var(--border-light);
     font-size: 11px;
     font-family: monospace;
 }

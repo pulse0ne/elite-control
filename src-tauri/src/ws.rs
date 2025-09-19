@@ -4,7 +4,7 @@ use axum::extract::{ConnectInfo, State, WebSocketUpgrade};
 use axum::extract::ws::{Message, WebSocket};
 use axum::response::IntoResponse;
 use futures_util::{SinkExt, StreamExt};
-use log::info;
+use log::{debug, info};
 use tauri::Emitter;
 use tokio::sync::Mutex;
 use crate::state::{AppState, MobileClient, MobileEvent, ServerEvent};
@@ -22,7 +22,14 @@ async fn handle_socket(
     state: AppState,
     addr: IpAddr,
 ) {
-    info!("Got new websocket connection: {:?}", addr); // TODO: save IPs
+    debug!("New connection attempt from {}", addr);
+
+    {
+        let mut clients = state.mobile_clients.lock().await;
+        clients.push(MobileClient { ip_addr: addr, viewport_width: 0, viewport_height: 0 });
+        let _ = state.app_handle.emit("clients-updated-event", clients.clone());
+        info!("Accepted new websocket connection: {:?} ({} total connections)", addr, clients.clone().len());
+    }
 
     let (tx, mut rx) = socket.split();
 
@@ -58,7 +65,14 @@ async fn handle_socket(
                     MobileEvent::ViewportReport { width, height } => {
                         info!("Got viewportReport from {:?}: {}x{}", addr, width, height);
                         let mut clients = state.mobile_clients.lock().await;
-                        clients.push(MobileClient { ip_addr: addr, viewport_width: width, viewport_height: height });
+                        *clients = clients.clone()
+                            .into_iter()
+                            .map(|mut f| {
+                                f.viewport_width = width;
+                                f.viewport_height = height;
+                                f
+                            })
+                            .collect();
                         let _ = state.app_handle.emit("clients-updated-event", clients.clone());
                     },
                     _ => {
@@ -69,11 +83,12 @@ async fn handle_socket(
         }
     }
 
-    info!("WebSocket client disconnected: {:?}", addr);
+    debug!("WebSocket disconnection: {:?}", addr);
 
     {
         let mut clients = state.mobile_clients.lock().await;
         *clients = clients.clone().into_iter().filter(|c| c.ip_addr != addr).collect();
         let _ = state.app_handle.emit("clients-updated-event", clients.clone());
+        info!("Websocket disconnected from {:?} ({} remaining connections)", addr, clients.clone().len());
     }
 }
