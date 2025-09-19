@@ -44,7 +44,7 @@ async fn handle_socket(
 
     let mut sub = state.server_tx.subscribe();
     let tx_clone = Arc::clone(&tx);
-    tokio::spawn(async move {
+    let mut sender = tokio::spawn(async move {
         while let Ok(evt) = sub.recv().await {
             let txt = match serde_json::to_string(&evt) {
                 Ok(s) => s,
@@ -58,29 +58,37 @@ async fn handle_socket(
         }
     });
 
-    while let Some(Ok(msg)) = rx.next().await {
-        if let Message::Text(txt) = msg {
-            if let Ok(evt) = serde_json::from_str::<MobileEvent>(&txt) {
-                match evt {
-                    MobileEvent::ViewportReport { width, height } => {
-                        info!("Got viewportReport from {:?}: {}x{}", addr, width, height);
-                        let mut clients = state.mobile_clients.lock().await;
-                        *clients = clients.clone()
-                            .into_iter()
-                            .map(|mut f| {
-                                f.viewport_width = width;
-                                f.viewport_height = height;
-                                f
-                            })
-                            .collect();
-                        let _ = state.app_handle.emit("clients-updated-event", clients.clone());
-                    },
-                    _ => {
-                        let _ = state.mobile_tx.send(evt).await;
+    let state_clone = state.clone();
+    let mut receiver = tokio::spawn(async move {
+        while let Some(Ok(msg)) = rx.next().await {
+            if let Message::Text(txt) = msg {
+                if let Ok(evt) = serde_json::from_str::<MobileEvent>(&txt) {
+                    match evt {
+                        MobileEvent::ViewportReport { width, height } => {
+                            info!("Got viewportReport from {:?}: {}x{}", addr, width, height);
+                            let mut clients = state_clone.mobile_clients.lock().await;
+                            *clients = clients.clone()
+                                .into_iter()
+                                .map(|mut f| {
+                                    f.viewport_width = width;
+                                    f.viewport_height = height;
+                                    f
+                                })
+                                .collect();
+                            let _ = state_clone.app_handle.emit("clients-updated-event", clients.clone());
+                        },
+                        _ => {
+                            let _ = state_clone.mobile_tx.send(evt).await;
+                        }
                     }
                 }
             }
         }
+    });
+
+    tokio::select! {
+        _ = &mut sender => receiver.abort(),
+        _ = &mut receiver => sender.abort(),
     }
 
     debug!("WebSocket disconnection: {:?}", addr);

@@ -1,4 +1,5 @@
 use std::{env, fs};
+use std::path::PathBuf;
 use chrono::Local;
 use log4rs::append::Append;
 use log4rs::append::console::ConsoleAppender;
@@ -8,7 +9,7 @@ use log4rs::append::rolling_file::policy::compound::trigger::size::SizeTrigger;
 use log4rs::append::rolling_file::RollingFileAppender;
 use log4rs::Config;
 use log4rs::config::{Appender, Root};
-use log::LevelFilter;
+use log::{debug, info, LevelFilter};
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 
@@ -65,7 +66,7 @@ fn make_rolling_file_appender() -> RollingFileAppender {
         .unwrap();
 
     let policy = CompoundPolicy::new(Box::new(trigger), Box::new(roller));
-
+    
     RollingFileAppender::builder()
         .build(ec_dir.join("elite-control.log"), Box::new(policy))
         .unwrap()
@@ -120,4 +121,5 @@ pub fn setup_logging(app_handle: AppHandle) {
     let config = builder.build(root).unwrap();
 
     log4rs::init_config(config).unwrap();
+    debug!("Logging initialized");
 }

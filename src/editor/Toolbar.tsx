@@ -13,8 +13,9 @@ export type ToolbarProps = {
   onAddWidget: (widget: Widget) => void;
   onDimensionsChange: (size: Size) => void;
 };
-export function Toolbar({ dimensions, onAddWidget, onDimensionsChange }: ToolbarProps) {
-  const devices = useDevices();
+
+export function Toolbar({ dimensions, onDimensionsChange }: ToolbarProps) {
+  const { devices } = useDevices();
 
   const handleWidthChange = (evt: ChangeEvent<HTMLInputElement>) => {
     console.log(evt.target.value);
@@ -62,7 +63,14 @@ export function Toolbar({ dimensions, onAddWidget, onDimensionsChange }: Toolbar
           onChange={handleHeightChange}
         />
         <Popup
-          trigger={<MdPhoneAndroid style={{ cursor: "pointer" }} />}
+          trigger={
+            <MdPhoneAndroid
+              style={{
+                cursor: devices.length ? "pointer" : undefined,
+                color: devices.length ? "var(--gradient-stop1)" : "#666"
+            }}
+            />
+          }
           disabled={!devices.length}
           position="bottom center"
         >

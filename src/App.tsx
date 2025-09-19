@@ -14,6 +14,7 @@ import {DevicesProvider} from "./hooks/useDevices.tsx";
 - Undo/Redo
 - Duplication
 - Sync viewport size button (when clients are attached)
+- Custom images/svgs
 - Audio/haptic feedback?
 - Better UI theme
 - Pane themes?

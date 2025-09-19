@@ -11,10 +11,14 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  overscroll-behavior: none;
 }
 
-body {
+body, html {
   margin: 0;
+  height: 100%;
+  width: 100%;
 }
 
 .disconnection-bg {
