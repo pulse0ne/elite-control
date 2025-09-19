@@ -1,0 +1,21 @@
+.editor-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.attributes-panel {
+    background-color: rgba(var(--light-bg-color), 0.5);
+    backdrop-filter: blur(5px);
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 300px;
+}
+
+.stage-container {
+    background-color: var(--dark-bg-color);
+}
+
+.stage-container > div {
+    height: 100%;
+}

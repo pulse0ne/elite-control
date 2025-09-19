@@ -84,25 +84,3 @@ button {
     flex-grow: 1;
     overflow: hidden;
 }
-
-.editor-container {
-    display: flex;
-    flex-direction: column;
-}
-
-.attributes-panel {
-    background-color: var(--light-bg-color);
-    backdrop-filter: blur(5px);
-    position: absolute;
-    right: 0;
-    top: 0;
-    width: 128px;
-}
-
-.stage-container {
-    background-color: var(--dark-bg-color);
-}
-
-.stage-container > div {
-    height: 100%;
-}

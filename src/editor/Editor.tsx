@@ -1,11 +1,11 @@
 import {Layer, Rect, Stage} from "react-konva";
 import {useEffect, useRef, useState} from "react";
-import {invoke} from "@tauri-apps/api/core";
 import Button, {ButtonAttributes} from "../widgets/Button.tsx";
 import {Position, Size} from "../widgets/widget.ts";
 import {KonvaEventObject} from "konva/lib/Node";
 import {Konva} from "konva/lib/_FullInternals";
 import "./editor.css";
+import {AttributesPanel} from "./AttributesPanel.tsx";
 
 const TEST: ButtonAttributes = {
   type: "button",
@@ -16,7 +16,7 @@ const TEST: ButtonAttributes = {
   buttonType: "action",
   navTarget: null,
   primary: {
-    fill: "rgba(0, 255, 0, 0.7)",
+    fill: "rgba(0, 201, 102, 0.7)",
     text: "Hello",
     fontSize: 16,
     fontColor: "black",
@@ -26,7 +26,7 @@ const TEST: ButtonAttributes = {
     cornerRadius: 8,
     icon: null,
     font: null,
-    stroke: "lime"
+    stroke: "rgb(0, 201, 102)"
   },
   pressed: {
     fontSize: 16,
@@ -44,11 +44,6 @@ const TEST: ButtonAttributes = {
 };
 
 const SCALE_FACTOR = 1.01;
-
-type FontSpec = {
-  name: string;
-  postscriptName: string;
-};
 
 export default function Editor() {
   const [ testObj, setTestObj ] = useState(TEST);
@@ -181,21 +176,3 @@ function TopBar() {
   );
 }
 
-type AttributesPanelProps = {
-  onPrint: () => void;
-};
-
-function AttributesPanel({ onPrint }: AttributesPanelProps) {
-  const [ _fonts, setFonts ] = useState<FontSpec[]>([]);
-
-  useEffect(() => {
-    invoke<FontSpec[]>("list_system_fonts").then(fonts => setFonts(fonts));
-  }, []);
-
-  return (
-    <div className="attributes-panel fill-y">
-      TODO
-      <button onClick={onPrint}>Print</button>
-    </div>
-  );
-}
